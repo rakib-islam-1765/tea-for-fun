@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daily GM App</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.1/dist/ethers.umd.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-image: url("./bg/34595861_8173588.jpg");
+        background-size: cover;
+        background-position: center;
+      }
+
+      .container {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        width: 400px;
+        max-width: 90%;
+      }
+
+      h1 {
+        text-align: center;
+        color: transparent;
+        background-image: linear-gradient(45deg, #6e09fb, #74fad1);
+        -webkit-background-clip: text;
+        background-clip: text;
+        font-size: 32px;
+      }
+
+      .logo {
+        display: block;
+        margin: 0 auto 1rem;
+        max-width: 100px;
+      }
+
+      .wallet-status {
+        text-align: center;
+        margin-bottom: 1rem;
+        color: #0a0711;
+      }
+
+      .tabs {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .tab-btn {
+        padding: 8px 16px;
+        font-size: 14px;
+        border-radius: 15px;
+        border: none;
+        cursor: pointer;
+        background: #e5e7eb;
+        color: #111827;
+        transition: all 0.3s ease;
+      }
+
+      .tab-btn.active {
+        background-color: #6e09fb;
+        color: white;
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      input {
+        padding: 12px 16px;
+        margin: 12px 0;
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 12px;
+        border: 1px solid #d1d5db;
+        background-color: #f3f4f6;
+        color: #6e09fb;
+        font-size: 14px;
+        transition: all 0.3s ease;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #6e09fb;
+        background-color: #ffffff;
+        box-shadow: 0 0 10px rgba(229, 213, 255, 0.6);
+      }
+
+      input::placeholder {
+        color: #b17bfd;
+      }
+
+      button {
+        padding: 12px 20px;
+        margin-top: 12px;
+        background-color: #6e09fb;
+        color: #ffffff;
+        border: none;
+        border-radius: 15px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #6e09fb;
+        color: white;
+      }
+
+      .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 999;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        text-align: center;
+        width: 90%;
+        max-width: 400px;
+      }
+
+      .modal a {
+        color: #6e09fb;
+        word-break: break-word;
+      }
+
+      #contractAddressLabel,
+      #messageLabel {
+        color: #6e09fb;
+        font-size: 14px;
+      }
+
+      #contractAddressDisplay,
+      #messageDisplay {
+        font-size: 12px;
+        color: #0a0711;
+        padding: 8px;
+        border-radius: 6px;
+        word-wrap: break-word;
+      }
+
+      #lastGMTimeDisplay {
+        font-size: 14px;
+        color: #0a0711;
+      }
+
+      #nftImage {
+        width: 100%;
+        border-radius: 8px;
+        margin-top: 20px;
+      }
+
+      .status,
+      .supply {
+        margin-top: 16px;
+        font-size: 14px;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <img
+        src="https://cdn.prod.website-files.com/650d0534262efafa72b3ccab/653fae09ad95abddab796cca_logo.svg"
+        alt="Logo"
+        class="logo"
+      />
+      <h1>Daily GM App</h1>
+      <div class="wallet-status">
+        Wallet Status:
+        <span id="walletStatus" style="color: red">Disconnected</span>
+      </div>
+      <div style="text-align: center">
+        <button id="connectWalletButton">Connect Wallet</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="gmTab">GM</button>
+        <button class="tab-btn" data-tab="nftTab">Mint NFT</button>
+      </div>
+
+      <div id="gmTab" class="tab-content active">
+        <p id="contractAddressLabel">Contract Address:</p>
+        <div id="contractAddressDisplay"></div>
+        <p id="messageLabel">Current Message:</p>
+        <div id="messageDisplay"></div>
+
+        <input
+          type="text"
+          id="newMessageInput"
+          placeholder="Enter new message"
+        />
+        <button id="updateMessageButton" disabled>Update Message</button>
+        <button id="sayGMButton" disabled>Say GM</button>
+
+        <div id="lastGMTimeDisplay"></div>
+        <h5>Teausername: guru24321313</h5>
+        <h6>
+          Twitter:
+          <a
+            href="https://x.com/Iamyournur?t=9YOqBLofvs77uvnfHCyHUw&s=09"
+            target="_blank"
+            >Follow me on X</a
+          >
+        </h6>
+      </div>
+
+      <div id="nftTab" class="tab-content">
+        <button id="mintNFTButton" disabled>Mint NFT</button>
+        <div class="status" id="status"></div>
+        <div class="supply" id="supply"></div>
+        <img id="nftImage" alt="NFT Image" />
+      </div>
+    </div>
+
+    <div id="modal" class="modal">
+      <div class="modal-content" id="modalContent">Processing...</div>
+    </div>
+
+    <script>
+      const gmContractAddress = "0xab8f92bc50e7206082dc2be8027c5c844a71f59d";
+      const blockExplorerBaseURL = "https://sepolia.tea.xyz/tx/";
+      const gmContractABI = [
+        "function getMessage() public view returns (string)",
+        "function getLastGMTime(address user) public view returns (uint256)",
+        "function sayGM() public",
+        "function updateMessage(string memory newMessage) public",
+      ];
+
+      const nftContractAddress = "0x0945f465b6b6b754d36477b5a3cd0837f2978a90";
+      const metadataCID =
+        "bafkreiagvoxyvivynlvb7xepjxkvm3nxazbpqg6autd6gfhe6yidlehdle";
+      const nftContractABI = [
+        {
+          inputs: [],
+          name: "mint",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "currentTokenId",
+          outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "maxSupply",
+          outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+          stateMutability: "view",
+          type: "function",
+        },
+      ];
+
+      let provider, signer, gmContract, nftContract;
+      let isWalletConnected = false;
+
+      const walletStatus = document.getElementById("walletStatus");
+      const connectWalletButton = document.getElementById(
+        "connectWalletButton"
+      );
+      const sayGMButton = document.getElementById("sayGMButton");
+      const updateMessageButton = document.getElementById(
+        "updateMessageButton"
+      );
+      const newMessageInput = document.getElementById("newMessageInput");
+      const modal = document.getElementById("modal");
+      const modalContent = document.getElementById("modalContent");
+      const mintNFTButton = document.getElementById("mintNFTButton");
+      const nftStatusDisplay = document.getElementById("status");
+      const nftSupplyDisplay = document.getElementById("supply");
+      const nftImage = document.getElementById("nftImage");
+
+      async function updateSupply() {
+        const minted = await nftContract.currentTokenId();
+        const max = await nftContract.maxSupply();
+        document.getElementById(
+          "supply"
+        ).textContent = `Minted: ${minted.toString()} / ${max.toString()}`;
+      }
+      async function connectWallet() {
+        try {
+          provider = new ethers.BrowserProvider(window.ethereum);
+          await provider.send("eth_requestAccounts", []);
+          signer = await provider.getSigner();
+          gmContract = new ethers.Contract(
+            gmContractAddress,
+            gmContractABI,
+            signer
+          );
+          nftContract = new ethers.Contract(
+            nftContractAddress,
+            nftContractABI,
+            signer
+          );
+          isWalletConnected = true;
+          walletStatus.textContent = "Connected";
+          walletStatus.style.color = "#10b981";
+          connectWalletButton.style.display = "none";
+          sayGMButton.disabled = false;
+          updateMessageButton.disabled = false;
+          mintNFTButton.disabled = false;
+          displayContractAddress();
+          await updateSupply();
+          await displayMessage();
+          await displayLastGMTime();
+          await updateSupplyWithoutSigner();
+          showNFTImage();
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      async function updateSupply() {
+        const minted = await nftContract.currentTokenId();
+        const max = await nftContract.maxSupply();
+        document.getElementById(
+          "supply"
+        ).textContent = `Minted: ${minted.toString()} / ${max.toString()}`;
+        await updateSupply();
+      }
+
+      function showModal(content, hideAfter = 4000) {
+        modalContent.innerHTML = content;
+        modal.style.display = "flex";
+        if (hideAfter)
+          setTimeout(() => (modal.style.display = "none"), hideAfter);
+      }
+
+      function displayContractAddress() {
+        document.getElementById("contractAddressDisplay").textContent =
+          gmContractAddress;
+      }
+
+      async function displayMessage() {
+        try {
+          const msg = await gmContract.getMessage();
+          document.getElementById("messageDisplay").textContent = msg;
+        } catch {
+          document.getElementById("messageDisplay").textContent =
+            "Failed to load.";
+        }
+      }
+
+      async function displayLastGMTime() {
+        if (isWalletConnected) {
+          const address = await signer.getAddress();
+          const time = await gmContract.getLastGMTime(address);
+          const formatted =
+            time > 0
+              ? `Your last GM: ${new Date(time * 1000).toLocaleString()}`
+              : "You haven't said GM yet.";
+          document.getElementById("lastGMTimeDisplay").textContent = formatted;
+        }
+      }
+
+      async function mintNFT() {
+        try {
+          mintNFTButton.disabled = true;
+          nftStatusDisplay.textContent = "Minting in progress...";
+          showModal("Minting in progress...");
+          const tx = await nftContract.mint();
+          await tx.wait();
+          showModal(
+            `✅ NFT Minted!<br><a href="${
+              blockExplorerBaseURL + tx.hash
+            }" target="_blank">View on Explorer</a>`
+          );
+          nftStatusDisplay.textContent = "NFT Minted!";
+          // await updateSupplyWithoutSigner();
+          mintNFTButton.disabled = false;
+        } catch (error) {
+          console.error("Mint error:", error);
+          nftStatusDisplay.textContent = "Minting failed.";
+          mintNFTButton.disabled = false;
+          showModal("❌ Minting Failed!");
+        }
+      }
+
+      function showNFTImage() {
+        nftImage.src = `https://ipfs.io/ipfs/${metadataCID}`;
+        nftImage.style.display = "block";
+      }
+
+      sayGMButton.addEventListener("click", async () => {
+        try {
+          showModal("Processing transaction...");
+          const tx = await gmContract.sayGM();
+          await tx.wait();
+          showModal(
+            `✅ GM Success!<br><a href="${
+              blockExplorerBaseURL + tx.hash
+            }" target="_blank">View on Explorer</a>`
+          );
+          displayLastGMTime();
+        } catch (err) {
+          showModal("❌ Transaction Failed");
+          console.error(err);
+        }
+      });
+
+      updateMessageButton.addEventListener("click", async () => {
+        const newMsg = newMessageInput.value.trim();
+        if (!newMsg) return alert("Enter a message");
+        try {
+          showModal("Updating message...");
+          const tx = await gmContract.updateMessage(newMsg);
+          await tx.wait();
+          showModal(
+            `✅ Message Updated!<br><a href="${
+              blockExplorerBaseURL + tx.hash
+            }" target="_blank">View on Explorer</a>`
+          );
+          displayMessage();
+          newMessageInput.value = "";
+        } catch (err) {
+          showModal("❌ Message update failed");
+          console.error(err);
+        }
+      });
+
+      connectWalletButton.addEventListener("click", connectWallet);
+      mintNFTButton.addEventListener("click", mintNFT);
+
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab-btn")
+            .forEach((b) => b.classList.remove("active"));
+          document
+            .querySelectorAll(".tab-content")
+            .forEach((tab) => tab.classList.remove("active"));
+          btn.classList.add("active");
+          document.getElementById(btn.dataset.tab).classList.add("active");
+        });
+      });
+
+      window.addEventListener("load", async () => {
+        showNFTImage();
+      });
+    </script>
+  </body>
+</html>
